@@ -9,8 +9,10 @@ from dataclasses import dataclass
 from pydantic import BaseModel
 
 from app.schemas.learning_assistant import QuizArgs, StudyPlanArgs
+from app.schemas.menu_recommendation import DietaryCheckArgs, MenuSearchArgs
 from app.schemas.stage_03 import AttractionArgs, CurrentWeatherArgs, HotelArgs, WeatherForecastArgs
 from app.tools.learning import create_quiz, create_study_plan
+from app.tools.menu import check_dietary_conditions, search_menus
 from app.tools.travel import search_attractions, search_hotels
 from app.tools.weather import get_current_weather, get_weather_forecast
 
@@ -72,6 +74,18 @@ TOOL_REGISTRY: dict[str, ToolSpec] = {
         description="학습 계획의 과목과 주제에 맞는 문제, 정답과 해설을 생성합니다.",
         input_model=QuizArgs,
         function=create_quiz,
+    ),
+    "search_menus": ToolSpec(
+        name="search_menus",
+        description="식사 시간, 인원, 예산과 선호 조건에 맞는 메뉴 후보를 검색합니다.",
+        input_model=MenuSearchArgs,
+        function=search_menus,
+    ),
+    "check_dietary_conditions": ToolSpec(
+        name="check_dietary_conditions",
+        description="메뉴 후보의 알레르기와 제외 음식 충돌 여부 및 영양 정보를 확인합니다.",
+        input_model=DietaryCheckArgs,
+        function=check_dietary_conditions,
     ),
 }
 
