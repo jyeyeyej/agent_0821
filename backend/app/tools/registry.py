@@ -8,7 +8,9 @@ from dataclasses import dataclass
 
 from pydantic import BaseModel
 
+from app.schemas.learning_assistant import QuizArgs, StudyPlanArgs
 from app.schemas.stage_03 import AttractionArgs, CurrentWeatherArgs, HotelArgs, WeatherForecastArgs
+from app.tools.learning import create_quiz, create_study_plan
 from app.tools.travel import search_attractions, search_hotels
 from app.tools.weather import get_current_weather, get_weather_forecast
 
@@ -59,8 +61,24 @@ TOOL_REGISTRY: dict[str, ToolSpec] = {
         input_model=AttractionArgs,
         function=search_attractions,
     ),
+    "create_study_plan": ToolSpec(
+        name="create_study_plan",
+        description="과목, 목표, 수준과 학습 시간에 맞는 학습 계획을 생성합니다.",
+        input_model=StudyPlanArgs,
+        function=create_study_plan,
+    ),
+    "create_quiz": ToolSpec(
+        name="create_quiz",
+        description="학습 계획의 과목과 주제에 맞는 문제, 정답과 해설을 생성합니다.",
+        input_model=QuizArgs,
+        function=create_quiz,
+    ),
 }
 
 
-def get_tool_definitions() -> list[dict]:
-    return [tool.definition() for tool in TOOL_REGISTRY.values()]
+def get_tool_definitions(names: set[str] | None = None) -> list[dict]:
+    """전체 또는 지정된 이름의 Tool 명세만 반환합니다."""
+    specs = TOOL_REGISTRY.values()
+    if names is not None:
+        specs = (spec for spec in specs if spec.name in names)
+    return [spec.definition() for spec in specs]
