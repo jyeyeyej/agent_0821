@@ -16,7 +16,7 @@
 
 ## 2. 선행 조건 및 협업 방식
 
-1. `dy`가 아래 함수를 포함한 `agent_client.py` 변경을 먼저 공유한다.
+1. `dy`가 기존 예제 전용 Client 함수를 제거한 뒤, 아래 함수를 포함하도록 `agent_client.py`를 재구성해 공유한다.
 
    ```python
    run_menu_recommendation(payload: dict[str, Any])
@@ -121,7 +121,7 @@ pg.run()
 예제 제거는 신규 기능 검증 뒤 별도 커밋으로 수행한다.
 
 1. 임시 이름의 메뉴 추천 페이지가 API 호출과 화면 렌더링을 정상 수행하는지 확인한다.
-2. `dy`의 학습 도우미 페이지와 신규 Client 함수가 반영된 최신 `main`을 기준으로 작업한다.
+2. `dy`가 학습 도우미 페이지를 추가하고, 기존 예제 Client 함수를 제거한 뒤 신규 Agent API 함수만 남기도록 `agent_client.py`를 재구성한 최신 `main`을 기준으로 작업한다.
 3. 기존 `frontend/app_pages/01_home.py`~`17_agent_cycle.py`를 제거한다.
 4. 임시 메뉴 추천 페이지를 `01_menu_recommendation.py`로 이름 변경한다.
 5. 학습 도우미 페이지가 `02_learning_assistant.py`에 있는지 확인한다.
@@ -130,7 +130,7 @@ pg.run()
 ## 6. 개발 및 검증 순서
 
 1. 현재 `app.py`, `17_agent_cycle.py`, `04_travel_classifier.py`를 읽어 기존 Streamlit·오류 처리 스타일을 확인한다.
-2. `dy`의 `run_menu_recommendation()` 함수가 포함된 변경을 반영한다.
+2. `dy`가 기존 예제 Client 함수를 제거하고 `run_menu_recommendation()`을 새로 구성한 변경을 반영한다.
 3. 임시 메뉴 추천 페이지에 폼, Happy Case 기본값, CSV 변환, API 호출을 구현한다.
 4. 성공 응답, 빈 응답, `BackendAPIError` 각각의 렌더링을 확인한다.
 5. 백엔드를 실행한 뒤 기본값으로 한 번 요청해 추천 메뉴와 두 Tool 결과가 표시되는지 확인한다.
