@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Mini Agent 03 · Tool Use
 
 01~03에서 만든 화면과 API를 유지하면서 Tool 선택, 안전 실행, 최종 답변 생성을 추가한 누적형 완성본입니다.
@@ -74,3 +75,7 @@ WEATHER_MODE=open_meteo
 Open-Meteo의 현재 상태는 관측소 실측값이 아니라 최신 기상 모델 기반 값입니다.
 외부 API 오류가 발생하면 실제 값처럼 Mock으로 조용히 대체하지 않고 Tool 오류를
 반환합니다.
+=======
+# agent_0821
+3조 0821 미니 프로젝트
+>>>>>>> origin/main
