@@ -65,8 +65,7 @@ project-root/
 │  │  │  └─ learning_assistant.py         # 신규 파일
 │  │  ├─ services/                        # 기존 폴더에 파일 추가
 │  │  │  ├─ menu_recommendation_service.py # 신규 파일
-│  │  │  ├─ learning_assistant_service.py  # 신규 파일
-│  │  │  └─ mock_data_service.py           # 신규 파일
+│  │  │  └─ learning_assistant_service.py  # 신규 파일
 │  │  ├─ tools/                           # 기존 폴더 재사용
 │  │  │  ├─ executor.py
 │  │  │  ├─ registry.py
@@ -76,12 +75,6 @@ project-root/
 │  │  │  └─ learning/                     # 신규 폴더
 │  │  │     ├─ study_plan.py              # 신규 파일
 │  │  │     └─ quiz.py                    # 신규 파일
-│  │  └─ mock_data/                       # 신규 폴더
-│  │     ├─ menus.json
-│  │     ├─ menu_nutrition.json
-│  │     ├─ learning_subjects.json
-│  │     ├─ learning_contents.json
-│  │     └─ quiz_templates.json
 │  └─ tests/                              # 기존 폴더에 파일 추가
 │     ├─ test_menu_recommendation_api.py   # 신규 파일
 │     └─ test_learning_assistant_api.py    # 신규 파일
@@ -127,17 +120,15 @@ backend/tests/
 
 ### 새로 추가해야 하는 폴더
 
-다음 세 개 폴더만 새로 생성한다.
+다음 두 개 폴더만 새로 생성한다.
 
 ```text
 backend/app/tools/menu/
 backend/app/tools/learning/
-backend/app/mock_data/
 ```
 
 - `backend/app/tools/menu/`: 메뉴 검색과 식단 조건 검증 Tool 두 개를 관리한다.
 - `backend/app/tools/learning/`: 학습 계획과 퀴즈 생성·채점 Tool 두 개를 관리한다.
-- `backend/app/mock_data/`: DB 대신 사용하는 메뉴, 영양, 학습 콘텐츠 및 퀴즈 데이터를 관리한다.
 
 그 외 작업은 새로운 폴더 생성이 아니라 기존 폴더에 파일을 추가하거나 기존 공통 파일을 수정하는 방식으로 진행한다.
 
@@ -216,7 +207,7 @@ backend/app/mock_data/
 사용자 요청
 → 요청 유형 및 Agent 선택
 → 필요한 Tool 호출
-→ 목 데이터 조회 또는 가공
+→ Tool 내부 Python 목 데이터 조회 또는 가공
 → Agent 응답 생성
 → 프론트엔드 반환
 ```
@@ -239,29 +230,35 @@ backend/app/mock_data/
 ### 오류 처리
 
 - 필수 입력이 부족하면 추가 질문을 반환한다.
-- Tool 결과가 없으면 목 데이터의 기본 추천 결과를 사용한다.
+- Tool 결과가 없으면 Tool 내부 Python 목 데이터의 기본 결과를 사용한다.
 - 내부 오류 상세 내용은 사용자에게 그대로 노출하지 않는다.
 - 사용자에게 이해 가능한 대체 안내와 재시도 방법을 제공한다.
 
 ## 7. 목 데이터 정책
 
-데이터베이스를 사용하지 않으므로 모든 데이터는 `backend/app/mock_data/`에서 관리한다.
+현재 `mini_agent_03_tool`의 여행·날씨 Tool과 같은 수준으로 구현하기 위해 별도의 JSON 파일이나 `mock_data/` 폴더를 만들지 않는다. 소규모 목 데이터는 각 Tool Python 파일 내부의 `list`와 `dict` 상수로 관리한다.
 
 ```text
-backend/app/mock_data/
-├─ menus.json
-├─ menu_nutrition.json
-├─ learning_subjects.json
-├─ learning_contents.json
-└─ quiz_templates.json
+backend/app/tools/menu/search.py
+└─ 메뉴 검색용 Python list/dict 목 데이터
+
+backend/app/tools/menu/dietary_check.py
+└─ 영양·알레르기 검증용 Python list/dict 목 데이터
+
+backend/app/tools/learning/study_plan.py
+└─ 과목·학습 콘텐츠용 Python list/dict 목 데이터
+
+backend/app/tools/learning/quiz.py
+└─ 퀴즈·정답·해설용 Python list/dict 목 데이터
 ```
 
 목 데이터 관리 원칙은 다음과 같다.
 
-- JSON 또는 TypeScript/JavaScript 객체 형태로 관리한다.
-- Agent와 Tool은 DB에 직접 접근하지 않는다.
-- 목 데이터 접근은 별도의 데이터 서비스 또는 모듈을 통해 일관되게 처리한다.
-- 실제 DB를 도입하더라도 Agent와 Tool의 인터페이스가 바뀌지 않도록 설계한다.
+- 현재 프로젝트처럼 Python의 `list`와 `dict`로 작성한다.
+- Agent는 목 데이터에 직접 접근하지 않고 Tool을 통해서만 결과를 받는다.
+- 목 데이터는 해당 Tool 파일의 모듈 상수로 두고 실행 함수와 분리한다.
+- Happy Case와 예외 테스트에 필요한 최소 데이터만 작성한다.
+- 별도의 `.json` 파일, `mock_data/` 폴더, `mock_data_service.py`는 추가하지 않는다.
 
 ## 8. 프론트엔드 범위
 
@@ -301,7 +298,7 @@ backend/app/mock_data/
 - Agent 요청 수신
 - Agent 유형 구분
 - Tool 호출 순서 관리
-- 목 데이터 조회 및 가공
+- Tool 내부 Python 목 데이터 조회 및 가공
 - 응답 형식 통일
 - 오류 처리 및 로그 관리
 
@@ -315,7 +312,7 @@ backend/app/mock_data/
 
 - 최초 실행 시 두 신규 페이지에 예시 입력값을 기본으로 채운다.
 - 사용자는 기본값을 변경하지 않고 실행 버튼만 눌러 결과를 확인할 수 있다.
-- 데이터는 `backend/app/mock_data/`에서 조회한다.
+- 데이터는 각 Tool Python 파일 내부의 `list`와 `dict`에서 조회한다.
 - 외부 API가 설정되지 않아도 Mock Provider를 통해 항상 동일한 정상 결과를 반환한다.
 - Tool 실행 결과와 최종 Agent 답변이 한 화면에서 순서대로 표시되어야 한다.
 
@@ -367,7 +364,7 @@ backend/app/mock_data/
 
 - 두 Agent의 기본 요청 및 응답 구현
 - Agent별 Tool 두 개 구현
-- 목 데이터 생성
+- Tool별 Python 목 데이터 생성
 - 최초 실행 Happy Case 및 기본 입력값 구현
 - 기본 프론트엔드 화면 연결
 
@@ -383,7 +380,7 @@ backend/app/mock_data/
 - 실제 외부 API 또는 DB로 교체 가능한 구조 유지
 - Tool 추가가 쉬운 모듈 구조 적용
 - Agent별 테스트 코드 작성
-- 목 데이터 교체 방식 문서화
+- Tool 내부 목 데이터 교체 방식 문서화
 
 ## 12. 완료 기준
 
