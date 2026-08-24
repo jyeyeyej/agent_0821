@@ -3,6 +3,7 @@ google-genai
 httpx
 openai
 pydantic
+psycopg[binary]
 python-dotenv
 python-multipart
 pytest

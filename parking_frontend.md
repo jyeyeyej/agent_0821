@@ -10,8 +10,7 @@
 |---|---|---|
 | Frontend A | `frontend/app_pages/03_parking_workflow.py` | 카메라 촬영, 고정 Workflow 요청, 1~4단계 Trace, 승인/거절 UI |
 | Frontend A | `frontend/clients/parking_workflow_client.py` | `POST /api/parking/workflow/entry` 이미지 업로드 |
-| Frontend A (통합 담당) | `frontend/app.py` | 주차 페이지 두 개를 `st.navigation`에 한 번만 등록 |
-| Frontend B | `frontend/app_pages/04_parking_agent.py` | 카메라 촬영,gent 요청, Agent 판단·Tool Trace, 승인/거절 UI A |
+| Frontend B | `frontend/app_pages/04_parking_agent.py` | 카메라 촬영, Agent 요청, Agent 판단·Tool Trace, 승인/거절 UI |
 | Frontend B | `frontend/clients/parking_agent_client.py` | `POST /api/parking/agent/entry` 이미지 업로드 |
 
 기존 `frontend/core/api_client.py`는 수정하지 않고 재사용한다. 공통 컴포넌트 파일을 새로 만들지 않으며, 작은 결과 표시 함수는 각 페이지 파일 내부에 둔다. 따라서 A와 B가 같은 파일을 동시에 수정할 필요가 없다.
