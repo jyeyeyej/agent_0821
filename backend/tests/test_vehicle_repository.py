@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 import pytest
 
+from app.repositories import vehicle_repository
 from app.repositories.vehicle_repository import DatabaseConnectionError, VehicleRepository
 
 
@@ -87,3 +88,10 @@ def test_repository_converts_sqlalchemy_url_for_psycopg() -> None:
     repository = VehicleRepository(database_url="postgresql+psycopg://parking_user:password@localhost:5432/parking_db")
 
     assert repository._psycopg_connection_url() == "postgresql://parking_user:password@localhost:5432/parking_db"
+
+
+def test_public_lookup_function_delegates_to_default_repository(monkeypatch) -> None:
+    expected = object()
+    monkeypatch.setattr(vehicle_repository._default_repository, "get_vehicle_by_plate", lambda plate: expected)
+
+    assert vehicle_repository.get_vehicle_by_plate("12가3456") is expected

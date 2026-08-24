@@ -88,3 +88,11 @@ class VehicleRepository:
     def _psycopg_connection_url(self) -> str:
         """Convert the project SQLAlchemy URL to the URI accepted by psycopg."""
         return self._database_url.replace("postgresql+psycopg://", "postgresql://", 1)
+
+
+_default_repository = VehicleRepository()
+
+
+def get_vehicle_by_plate(plate_number: str) -> VehicleRecord | None:
+    """Public repository contract used by the read-only vehicle lookup Tool."""
+    return _default_repository.get_vehicle_by_plate(plate_number)
