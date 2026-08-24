@@ -31,6 +31,7 @@ class Settings:
     open_meteo_base_url: str = os.getenv("OPEN_METEO_BASE_URL", "https://api.open-meteo.com").rstrip("/")
     open_meteo_geocoding_url: str = os.getenv("OPEN_METEO_GEOCODING_URL", "https://geocoding-api.open-meteo.com").rstrip("/")
     max_image_size_mb: int = int(os.getenv("MAX_IMAGE_SIZE_MB", "10"))
+    database_url: str = os.getenv("DATABASE_URL", "")
     parking_allowed_image_mime_types: tuple[str, ...] = tuple(
         item.strip()
         for item in os.getenv("PARKING_ALLOWED_IMAGE_MIME_TYPES", "image/jpeg,image/png").split(",")
