@@ -10,9 +10,11 @@ from pydantic import BaseModel
 
 from app.schemas.learning_assistant import QuizArgs, StudyPlanArgs
 from app.schemas.menu_recommendation import DietaryCheckArgs, MenuSearchArgs
+from app.schemas.parking import VehicleLookupArgs
 from app.schemas.stage_03 import AttractionArgs, CurrentWeatherArgs, HotelArgs, WeatherForecastArgs
 from app.tools.learning import create_quiz, create_study_plan
 from app.tools.menu import check_dietary_conditions, search_menus
+from app.tools.vehicle_lookup import vehicle_lookup
 from app.tools.travel import search_attractions, search_hotels
 from app.tools.weather import get_current_weather, get_weather_forecast
 
@@ -86,6 +88,12 @@ TOOL_REGISTRY: dict[str, ToolSpec] = {
         description="메뉴 후보의 알레르기와 제외 음식 충돌 여부 및 영양 정보를 확인합니다.",
         input_model=DietaryCheckArgs,
         function=check_dietary_conditions,
+    ),
+    "vehicle_lookup": ToolSpec(
+        name="vehicle_lookup",
+        description="정규화된 차량 번호판으로 등록, 활성 및 만료 상태를 읽기 전용 조회합니다.",
+        input_model=VehicleLookupArgs,
+        function=vehicle_lookup,
     ),
 }
 
