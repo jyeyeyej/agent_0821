@@ -11,8 +11,8 @@ services:
       - "5432:5432"
     volumes:
       - parking_postgres_data:/var/lib/postgresql/data
-      # - ./backend/db/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
-      # - ./backend/db/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+      - ./backend/db/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./backend/db/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
