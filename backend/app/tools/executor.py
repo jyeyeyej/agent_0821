@@ -18,5 +18,9 @@ def execute_tool_safely(name: str, arguments: dict) -> ToolRunResult:
     except ValidationError as error:
         details = [{"field": ".".join(map(str, item["loc"])), "message": item["msg"], "type": item["type"]} for item in error.errors()]
         return ToolRunResult(success=False, tool_name=name, error={"code": "TOOL_VALIDATION_ERROR", "details": details})
-    except Exception as error:
-        return ToolRunResult(success=False, tool_name=name, error={"code": "TOOL_EXECUTION_ERROR", "message": str(error)})
+    except Exception:
+        return ToolRunResult(
+            success=False,
+            tool_name=name,
+            error={"code": "TOOL_EXECUTION_ERROR", "message": "Tool 실행 중 내부 오류가 발생했습니다."},
+        )
