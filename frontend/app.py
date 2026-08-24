@@ -19,6 +19,11 @@ parking_workflow = st.Page(
     title="주차 출입 Workflow",
     icon="🚗",
 )
+parking_agent = st.Page(
+    "app_pages/04_parking_agent.py",
+    title="주차 출입 AI Agent",
+    icon="🤖",
+)
 
-navigation = st.navigation([menu, learning, parking_workflow])
+navigation = st.navigation([menu, learning, parking_workflow, parking_agent])
 navigation.run()
