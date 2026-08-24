@@ -14,6 +14,11 @@ learning = st.Page(
     title="학습 도우미 Agent",
     icon="📚",
 )
+parking_workflow = st.Page(
+    "app_pages/03_parking_workflow.py",
+    title="주차 출입 Workflow",
+    icon="🚗",
+)
 
-navigation = st.navigation([menu, learning])
+navigation = st.navigation([menu, learning, parking_workflow])
 navigation.run()

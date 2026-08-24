@@ -7,4 +7,6 @@ from app.schemas.stage_03 import HotelArgs
 
 
 def search_hotels(args: HotelArgs) -> dict:
-    return {"items": [{"name": "바다 호텔", "price_per_night": 120000}, {"name": "도시 호텔", "price_per_night": 90000}], "query": args.model_dump(mode="json"), "source": "mock"}
+    return {"items": [{
+        "name": "바다 호텔", "price_per_night": 120000},
+        {"name": "도시 호텔", "price_per_night": 90000}], "query": args.model_dump(mode="json"), "source": "mock"}
