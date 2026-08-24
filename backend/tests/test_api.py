@@ -22,7 +22,9 @@ def test_tool_registry_contains_read_only_tools() -> None:
     response = client.get("/api/tools")
     assert response.status_code == 200
     names = {item["name"] for item in response.json()["tools"]}
-    assert names == {"get_current_weather", "get_weather_forecast", "search_hotels", "search_attractions"}
+    existing_tools = {"get_current_weather", "get_weather_forecast", "search_hotels", "search_attractions"}
+    assert existing_tools <= names
+    assert {"create_study_plan", "create_quiz"} <= names
     assert "delete" not in names
 
 

@@ -8,6 +8,12 @@ from app.tools.registry import get_tool_definitions
 
 
 TRAVEL_AGENT_NAME = "travel_lookup_agent"
+TRAVEL_TOOL_NAMES = {
+    "get_current_weather",
+    "get_weather_forecast",
+    "search_hotels",
+    "search_attractions",
+}
 
 TRAVEL_AGENT_INSTRUCTIONS = """
 당신은 여행 조회 Agent입니다.
@@ -23,7 +29,7 @@ Tool Result에 포함된 정보만 사용해 한국어로 답변하고, 결과�
 
 def get_travel_tools() -> list[dict[str, Any]]:
     """여행 Agent가 사용할 수 있는 Tool 목록입니다."""
-    return get_tool_definitions()
+    return get_tool_definitions(TRAVEL_TOOL_NAMES)
 
 
 def select_travel_tool(

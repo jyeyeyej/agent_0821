@@ -46,8 +46,8 @@ def show_recommendations(recommendations: Any) -> None:
         name = item.get("name") or item.get("menu") or item.get("title") or f"추천 메뉴 {index}"
         st.markdown(f"#### {index}. {name}")
         show_value("추천 이유", item.get("reason") or item.get("reasons"))
-        show_value("예상 가격", item.get("price") or item.get("priceRange"))
-        show_value("영양·식단 참고", item.get("nutrition") or item.get("dietaryInfo"))
+        show_value("예상 가격", item.get("totalPrice") or item.get("price") or item.get("priceRange"))
+        show_value("영양·식단 참고", item.get("nutritionNote") or item.get("nutrition") or item.get("dietaryInfo"))
         show_value("대체 메뉴", item.get("alternatives") or item.get("alternativeMenus"))
 
 
@@ -81,8 +81,8 @@ with st.form("menu_recommendation_form"):
     with left:
         meal_time = st.selectbox("식사 시간", ["아침", "점심", "저녁", "야식"], index=2)
         people = st.number_input("인원", min_value=1, value=2, step=1)
-        budget = st.number_input("총 예산 (원)", min_value=0, value=30000, step=1000)
-        spicy_level = st.selectbox("맵기", ["안 매운", "보통", "매운"], index=1)
+        budget = st.number_input("총 예산 (원)", min_value=1000, value=30000, step=1000)
+        spicy_level = st.selectbox("맵기", ["안 매움", "보통", "매움"], index=1)
     with right:
         preferences = st.text_input("선호 음식 (쉼표로 구분)", value="한식, 따뜻한 음식")
         excluded_foods = st.text_input("제외 음식 (쉼표로 구분)")

@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 
+from app.routers.learning_assistant_router import learning_assistant_router
+from app.routers.menu_recommendation_router import menu_recommendation_router
 from app.routers.stage_01_router import stage_01_router
 from app.routers.stage_02_router import stage_02_router
 from app.routers.stage_03_router import stage_03_router
@@ -25,3 +27,5 @@ app = FastAPI(title="Mini Agent 03 · Tool Use", openapi_tags=TAGS_METADATA)
 app.include_router(stage_01_router)
 app.include_router(stage_02_router)
 app.include_router(stage_03_router)
+app.include_router(learning_assistant_router)
+app.include_router(menu_recommendation_router)

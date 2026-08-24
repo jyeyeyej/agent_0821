@@ -83,7 +83,7 @@ with st.form("learning_assistant_form"):
         study_minutes = st.number_input(
             "학습 시간(분)",
             min_value=10,
-            max_value=480,
+            max_value=240,
             value=30,
             step=10,
         )
