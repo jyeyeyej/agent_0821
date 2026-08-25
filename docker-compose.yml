@@ -4,8 +4,8 @@ services:
     container_name: parking-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-parking_db}
-      POSTGRES_USER: ${POSTGRES_USER:-parking_user}
+      POSTGRES_DB: ${POSTGRES_DB:-agent_db}
+      POSTGRES_USER: ${POSTGRES_USER:-agent_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env before starting Docker}
     ports:
       - "5432:5432"

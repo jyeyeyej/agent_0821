@@ -63,6 +63,7 @@ def run_parking_entry_agent(content: bytes, content_type: str) -> ParkingEntryRe
     request_id = uuid4()
     trace: list[ParkingTraceItem] = []
     try:
+        #번호판 인식
         recognition = extract_plate(content, content_type)
         trace.append(ParkingTraceItem(stage="1_plate_recognition", status="success", data={
             "plate_number": recognition.plate_number, "confidence": recognition.confidence,
@@ -81,11 +82,12 @@ def run_parking_entry_agent(content: bytes, content_type: str) -> ParkingEntryRe
         )
 
     try:
+        #AI Agent가 행동 결정 ⭐ 핵심 Agent 부분
         decision = decide_parking_action(recognition)
     except Exception:
         decision = ParkingAgentDecision(action="request_recapture", reason="Agent 판단을 완료하지 못했습니다.")
 
-    # Agent가 OCR 결과를 바꾸거나 낮은 신뢰도를 우회하지 못하게 Backend가 재검증합니다.
+    # Agent가 OCR 결과를 바꾸거나 낮은 신뢰도를 우회하지 못하게 Backend가 재검증
     valid_lookup = (
         decision.action == "lookup_vehicle"
         and recognition.plate_number is not None
@@ -102,7 +104,7 @@ def run_parking_entry_agent(content: bytes, content_type: str) -> ParkingEntryRe
             approved=False, gate_command="keep_closed", reason="번호판이 명확하지 않습니다. 다시 촬영해 주세요.",
             needs_recapture=True, trace=trace,
         )
-
+    #Agent 결정에 따라 Tool 실행
     raw_tool_result = execute_tool_safely("vehicle_lookup", {"plate_number": recognition.plate_number})
     tool_data = safe_tool_data(raw_tool_result)
     trace.append(ParkingTraceItem(
@@ -113,12 +115,14 @@ def run_parking_entry_agent(content: bytes, content_type: str) -> ParkingEntryRe
         policy = deny_processing_failure()
     else:
         try:
+            #입차 정책 판단
             policy = evaluate_entry_policy(VehicleLookupResult.model_validate(tool_data))
         except Exception:
             policy = deny_processing_failure()
     trace.append(ParkingTraceItem(stage="4_entry_policy", status="success" if policy.approved else "rejected", data={
         "approved": policy.approved, "gate_command": policy.gate_command, "reason_code": policy.reason_code,
     }))
+    #최종 결과 반환
     return ParkingEntryResponse(
         system_type="agent", request_id=request_id,
         recognized_plate_number=recognition.plate_number, recognition_confidence=recognition.confidence,

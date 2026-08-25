@@ -57,6 +57,7 @@ def run_parking_workflow(content: bytes, content_type: str) -> ParkingEntryRespo
     request_id = uuid4()
     trace: list[ParkingTraceItem] = []
     try:
+        #이미지 검증 + 번호판 인식
         recognition = extract_plate(content, content_type)
         trace.append(ParkingTraceItem(
             stage=WORKFLOW_STAGES[0], status="success", data={"content_type": content_type.split(";", 1)[0]},
@@ -75,12 +76,14 @@ def run_parking_workflow(content: bytes, content_type: str) -> ParkingEntryRespo
         trace.extend(_skipped(stage, "이미지 처리 실패") for stage in WORKFLOW_STAGES[1:])
         return _recapture_response("workflow", request_id, "번호판을 인식하지 못했습니다. 다시 촬영해 주세요.", trace)
 
+    #번호판 인식 실패 여부 확인
     if not recognition.plate_number or recognition.confidence < settings.parking_ocr_confidence_threshold:
         trace.extend(_skipped(stage, "번호판 재촬영 필요") for stage in WORKFLOW_STAGES[2:])
         return _recapture_response(
             "workflow", request_id, "번호판이 명확하지 않습니다. 다시 촬영해 주세요.", trace, recognition,
         )
 
+    #차량 조회 Tool 실행
     raw_tool_result = execute_tool_safely("vehicle_lookup", {"plate_number": recognition.plate_number})
     tool_data = safe_tool_data(raw_tool_result)
     if tool_data is None:
@@ -89,6 +92,7 @@ def run_parking_workflow(content: bytes, content_type: str) -> ParkingEntryRespo
     else:
         trace.append(ParkingTraceItem(stage=WORKFLOW_STAGES[2], status="success", data=tool_data))
         try:
+            #입차 정책 판단
             policy = evaluate_entry_policy(VehicleLookupResult.model_validate(tool_data))
         except Exception:
             policy = deny_processing_failure()
@@ -98,6 +102,8 @@ def run_parking_workflow(content: bytes, content_type: str) -> ParkingEntryRespo
         status="success" if policy.approved else "rejected",
         data={"approved": policy.approved, "gate_command": policy.gate_command, "reason_code": policy.reason_code},
     ))
+    
+    #최종 결과 반환
     return ParkingEntryResponse(
         system_type="workflow",
         request_id=request_id,
