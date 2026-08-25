@@ -11,10 +11,13 @@ from pydantic import BaseModel
 from app.schemas.learning_assistant import QuizArgs, StudyPlanArgs
 from app.schemas.menu_recommendation import DietaryCheckArgs, MenuSearchArgs
 from app.schemas.parking import VehicleLookupArgs
+from app.schemas.kiosk_rag import SearchMenuCatalogArgs, TranscribeAndRetrieveArgs
+from app.schemas.kiosk_order import CartUpdateArgs
 from app.schemas.stage_03 import AttractionArgs, CurrentWeatherArgs, HotelArgs, WeatherForecastArgs
 from app.tools.learning import create_quiz, create_study_plan
 from app.tools.menu import check_dietary_conditions, search_menus
 from app.tools.vehicle_lookup import vehicle_lookup
+from app.tools.kiosk import search_menu_catalog, transcribe_and_retrieve, update_order_cart
 from app.tools.travel import search_attractions, search_hotels
 from app.tools.weather import get_current_weather, get_weather_forecast
 
@@ -94,6 +97,24 @@ TOOL_REGISTRY: dict[str, ToolSpec] = {
         description="정규화된 차량 번호판으로 등록, 활성 및 만료 상태를 읽기 전용 조회합니다.",
         input_model=VehicleLookupArgs,
         function=vehicle_lookup,
+    ),
+    "transcribe_and_retrieve": ToolSpec(
+        name="transcribe_and_retrieve",
+        description="음성을 텍스트로 변환하고 세션 로그 저장 및 키오스크 RAG 근거 문서를 검색합니다.",
+        input_model=TranscribeAndRetrieveArgs,
+        function=transcribe_and_retrieve,
+    ),
+    "search_menu_catalog": ToolSpec(
+        name="search_menu_catalog",
+        description="현재 햄버거 메뉴의 가격, 품절, 옵션 및 알레르기 정보를 읽기 전용 조회합니다.",
+        input_model=SearchMenuCatalogArgs,
+        function=search_menu_catalog,
+    ),
+    "update_order_cart": ToolSpec(
+        name="update_order_cart",
+        description="검증된 메뉴와 옵션으로 키오스크 장바구니를 추가, 수정, 삭제 또는 결제 전 확정합니다.",
+        input_model=CartUpdateArgs,
+        function=update_order_cart,
     ),
 }
 

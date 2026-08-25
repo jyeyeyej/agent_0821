@@ -1,6 +1,8 @@
-"""Part B 주문 Agent: A Tool의 결과를 받아 장바구니 변경 여부를 결정한다."""
+"""키오스크 Agent: 허용된 Tool 결과만 근거로 다음 주문 행동을 안내한다."""
 
 from typing import Any
+
+from app.tools.executor import execute_tool_safely
 
 
 def make_order_reply(
@@ -30,3 +32,32 @@ def make_order_reply(
         "retrievals": retrievals or [],
         "trace": trace or [{"stage": "agent_decision", "action": "ask_for_structured_order"}],
     }
+
+
+def run_kiosk_order_agent(session_id: str, text: str, cart: dict) -> dict:
+    """메뉴 탐색은 읽기 Tool로, 주문 완료는 상태 변경 Tool로 안전 실행한다."""
+    trace: list[dict[str, Any]] = []
+    retrievals: list[dict[str, Any]] = []
+    normalized = text.strip()
+    if not normalized:
+        return make_order_reply(normalized, cart, trace=trace)
+
+    if any(word in normalized for word in ("추천", "메뉴", "버거", "세트", "알레르기", "품절")):
+        catalog = execute_tool_safely("search_menu_catalog", {"query": normalized, "limit": 5})
+        trace.append({"stage": "search_menu_catalog", "data": catalog.model_dump(mode="json")})
+        if catalog.success:
+            retrievals = catalog.data.get("items", [])
+
+    if "주문 완료" in normalized:
+        completed = execute_tool_safely(
+            "update_order_cart", {"session_id": session_id, "operation": "ready_for_payment"}
+        )
+        trace.append({"stage": "update_order_cart", "data": completed.model_dump(mode="json")})
+        if completed.success:
+            cart = completed.data
+            message = "주문을 확인했습니다. 화면에서 결제를 진행해 주세요."
+            return {"assistant_message": message, "requires_confirmation": False, "cart": cart, "retrievals": retrievals, "trace": trace}
+
+    reply = make_order_reply(normalized, cart, retrievals=retrievals, trace=trace)
+    reply["cart"] = cart
+    return reply

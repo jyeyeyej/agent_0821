@@ -44,7 +44,7 @@ def update_cart(args) -> dict:
         elif args.operation == "remove":
             if not args.cart_item_id:
                 raise ValueError("삭제할 cart_item_id가 필요합니다.")
-            cursor.execute("DELETE FROM order_cart_items WHERE session_id=%s AND cart_item_id=%s", (args.session_id, args.cart_item_id))
+            cursor.execute("DELETE FROM order_cart_items WHERE session_id=%s AND item_id=%s", (args.session_id, args.cart_item_id))
         elif args.operation in ("add", "update"):
             _upsert_item(cursor, args)
         elif args.operation == "ready_for_payment":
@@ -71,7 +71,7 @@ def _upsert_item(cursor: Any, args: Any) -> None:
         raise ValueError("메뉴, 수량, 옵션이 필요합니다.")
     cursor.execute(
         """
-        SELECT menu_id, name, price, available, allergens, allowed_options
+        SELECT menu_id, name, price, available, allergens, available_options
         FROM menu_catalog WHERE menu_id=%s FOR SHARE
         """,
         (args.menu_id,),
@@ -83,19 +83,22 @@ def _upsert_item(cursor: Any, args: Any) -> None:
         raise ValueError("현재 품절된 메뉴입니다.")
     selection = args.selection
     allowed = menu[5] or {}
-    if selection.order_form == "set" and not allowed.get("set", False):
+    order_forms = allowed.get("order_forms", {})
+    if selection.order_form == "set" and "set" not in order_forms:
         raise ValueError("세트 변경이 불가능한 메뉴입니다.")
     if selection.drink_id and selection.order_form != "set":
         raise ValueError("음료 변경은 세트에서만 가능합니다.")
+    if selection.drink_id and selection.drink_id not in allowed.get("allowed_drinks", []):
+        raise ValueError("선택할 수 없는 음료입니다.")
     option_price = _option_price(selection, allowed)
     if args.operation == "update":
         if not args.cart_item_id:
             raise ValueError("수정할 cart_item_id가 필요합니다.")
         from psycopg.types.json import Jsonb
         cursor.execute(
-            """UPDATE order_cart_items SET quantity=%s, selection=%s, unit_price=%s, option_price=%s,
-               line_total=%s, allergens=%s WHERE session_id=%s AND cart_item_id=%s""",
-            (args.quantity, Jsonb(selection.model_dump(mode="json")), menu[2], option_price,
+            """UPDATE order_cart_items SET quantity=%s, order_form=%s, selected_options=%s, unit_price=%s, option_price=%s,
+               line_total=%s, allergen_snapshot=%s, updated_at=CURRENT_TIMESTAMP WHERE session_id=%s AND item_id=%s""",
+            (args.quantity, selection.order_form, Jsonb(selection.model_dump(mode="json")), menu[2], option_price,
              (menu[2] + option_price) * args.quantity, menu[4] or [], args.session_id, args.cart_item_id),
         )
         if cursor.rowcount != 1:
@@ -104,20 +107,20 @@ def _upsert_item(cursor: Any, args: Any) -> None:
         from psycopg.types.json import Jsonb
         cursor.execute(
             """INSERT INTO order_cart_items
-               (session_id, menu_id, name, quantity, selection, unit_price, option_price, line_total, allergens)
+               (session_id, menu_id, quantity, order_form, selected_options, unit_price, option_price, line_total, allergen_snapshot)
                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
-            (args.session_id, menu[0], menu[1], args.quantity, Jsonb(selection.model_dump(mode="json")), menu[2],
+            (args.session_id, menu[0], args.quantity, selection.order_form, Jsonb(selection.model_dump(mode="json")), menu[2],
              option_price, (menu[2] + option_price) * args.quantity, menu[4] or []),
         )
 
 
 def _option_price(selection: CartSelection, allowed: dict) -> int:
-    prices = allowed.get("prices", {})
+    order_forms = allowed.get("order_forms", {})
     return (
-        (prices.get("set", 0) if selection.order_form == "set" else 0)
-        + (prices.get("size_up", 0) if selection.size_up else 0)
-        + prices.get("extra_patty", 0) * selection.extra_patty
-        + prices.get("extra_cheese", 0) * selection.extra_cheese
+        (order_forms.get("set", 0) if selection.order_form == "set" else 0)
+        + (allowed.get("size_up", 0) if selection.size_up else 0)
+        + allowed.get("extra_patty", 0) * selection.extra_patty
+        + allowed.get("extra_cheese", 0) * selection.extra_cheese
     )
 
 
@@ -125,8 +128,11 @@ def _read_cart(cursor: Any, session_id: UUID) -> dict:
     cursor.execute("SELECT status, order_type FROM order_sessions WHERE session_id=%s", (session_id,))
     status, order_type = cursor.fetchone()
     cursor.execute(
-        """SELECT cart_item_id, menu_id, name, quantity, selection, unit_price, option_price, line_total, allergens
-           FROM order_cart_items WHERE session_id=%s ORDER BY created_at, cart_item_id""", (session_id,)
+        """SELECT item_id, item.menu_id, menu.name, item.quantity, item.selected_options, item.unit_price,
+                  item.option_price, item.line_total, item.allergen_snapshot
+           FROM order_cart_items AS item
+           JOIN menu_catalog AS menu ON menu.menu_id = item.menu_id
+           WHERE item.session_id=%s ORDER BY item.created_at, item.item_id""", (session_id,)
     )
     items = [
         {"cart_item_id": row[0], "menu_id": row[1], "name": row[2], "quantity": row[3],
