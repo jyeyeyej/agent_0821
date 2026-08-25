@@ -194,5 +194,4 @@ SET
     embedding = CASE
         WHEN documents.content IS DISTINCT FROM EXCLUDED.content THEN NULL
         ELSE documents.embedding
-    END,
-    updated_at = CURRENT_TIMESTAMP;
+    END;

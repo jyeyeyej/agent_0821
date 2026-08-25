@@ -147,8 +147,7 @@ class RagRetriever:
                 embedding_model = EXCLUDED.embedding_model,
                 embedding_dimension = EXCLUDED.embedding_dimension,
                 embedding = EXCLUDED.embedding,
-                metadata = EXCLUDED.metadata,
-                updated_at = CURRENT_TIMESTAMP
+                metadata = EXCLUDED.metadata
         """
         rows = []
         for document in documents:

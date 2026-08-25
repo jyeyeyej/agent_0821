@@ -123,9 +123,9 @@ CREATE INDEX IF NOT EXISTS documents_retrieval_filter_idx
 CREATE INDEX IF NOT EXISTS documents_metadata_idx
     ON documents USING gin (metadata);
 
-CREATE INDEX IF NOT EXISTS documents_embedding_cosine_idx
-    ON documents USING hnsw (embedding vector_cosine_ops)
-    WHERE embedding IS NOT NULL;
+-- `aidevs-pgvector`의 기존 수업용 documents.embedding은 vector 차원을
+-- 고정하지 않은 형태일 수 있다. 그런 테이블에서는 HNSW 인덱스를 만들 수
+-- 없으므로, 키오스크는 pgvector `<=>` 정확도 검색을 사용한다.
 
 CREATE INDEX IF NOT EXISTS menu_catalog_category_available_idx
     ON menu_catalog (category, available);

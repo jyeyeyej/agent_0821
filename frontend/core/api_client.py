@@ -5,8 +5,7 @@ from typing import Any
 
 import httpx
 
-
-BACKEND_URL = os.getenv("BACKEND_API_URL", "http://127.0.0.1:8000/").rstrip("/")
+BACKEND_URL = os.getenv("BACKEND_API_URL", "http://192.168.1.12:8000").rstrip("/")
 REQUEST_TIMEOUT = 70.0
 
 
@@ -26,29 +25,47 @@ def _check(response: httpx.Response) -> httpx.Response:
 
 def request(method: str, path: str, json: dict[str, Any] | None = None) -> Any:
     try:
-        response = _check(httpx.request(method, f"{BACKEND_URL}{path}", json=json, timeout=REQUEST_TIMEOUT))
+        response = _check(
+            httpx.request(
+                method, f"{BACKEND_URL}{path}", json=json, timeout=REQUEST_TIMEOUT
+            )
+        )
         return response.json()
     except httpx.TimeoutException as error:
-        raise BackendAPIError(f"백엔드 응답 시간이 초과되었습니다: {BACKEND_URL}") from error
+        raise BackendAPIError(
+            f"백엔드 응답 시간이 초과되었습니다: {BACKEND_URL}"
+        ) from error
     except httpx.RequestError as error:
-        raise BackendAPIError(f"백엔드 서버에 연결할 수 없습니다: {BACKEND_URL}") from error
+        raise BackendAPIError(
+            f"백엔드 서버에 연결할 수 없습니다: {BACKEND_URL}"
+        ) from error
     except ValueError as error:
         raise BackendAPIError("백엔드가 올바른 JSON을 반환하지 않았습니다.") from error
 
 
 def upload(path: str, files: dict[str, Any], data: dict[str, Any]) -> Any:
     try:
-        return _check(httpx.post(f"{BACKEND_URL}{path}", files=files, data=data, timeout=REQUEST_TIMEOUT)).json()
+        return _check(
+            httpx.post(
+                f"{BACKEND_URL}{path}", files=files, data=data, timeout=REQUEST_TIMEOUT
+            )
+        ).json()
     except httpx.TimeoutException as error:
-        raise BackendAPIError(f"이미지 업로드 응답 시간이 초과되었습니다: {BACKEND_URL}") from error
+        raise BackendAPIError(
+            f"이미지 업로드 응답 시간이 초과되었습니다: {BACKEND_URL}"
+        ) from error
     except httpx.RequestError as error:
-        raise BackendAPIError(f"이미지 업로드 중 Backend에 연결할 수 없습니다: {BACKEND_URL}") from error
+        raise BackendAPIError(
+            f"이미지 업로드 중 Backend에 연결할 수 없습니다: {BACKEND_URL}"
+        ) from error
     except ValueError as error:
         raise BackendAPIError("백엔드가 올바른 JSON을 반환하지 않았습니다.") from error
 
 
 def request_bytes(path: str, json: dict[str, Any]) -> bytes:
     try:
-        return _check(httpx.post(f"{BACKEND_URL}{path}", json=json, timeout=REQUEST_TIMEOUT)).content
+        return _check(
+            httpx.post(f"{BACKEND_URL}{path}", json=json, timeout=REQUEST_TIMEOUT)
+        ).content
     except httpx.RequestError as error:
         raise BackendAPIError("음성 생성 중 Backend에 연결할 수 없습니다.") from error
