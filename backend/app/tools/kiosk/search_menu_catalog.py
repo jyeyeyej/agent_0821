@@ -2,6 +2,7 @@
 
 from collections.abc import Callable
 import json
+import re
 from typing import Any
 
 from app.core.config import settings
@@ -19,6 +20,7 @@ class MenuCatalogRepository:
 
     def search(self, args: SearchMenuCatalogArgs) -> MenuCatalogResult:
         pattern = f"%{args.query}%"
+        normalized_pattern = f"%{re.sub(r'\s+', '', args.query)}%"
         sql = """
             SELECT
                 menu_id,
@@ -39,7 +41,13 @@ class MenuCatalogRepository:
             FROM menu_catalog
             WHERE (%s::text IS NULL OR category = %s::text)
               AND (cardinality(%s::text[]) = 0 OR NOT allergens && %s::text[])
-              AND (name ILIKE %s OR description ILIKE %s OR category ILIKE %s)
+              AND (
+                    name ILIKE %s
+                 OR description ILIKE %s
+                 OR category ILIKE %s
+                 OR regexp_replace(name, '\\s+', '', 'g') ILIKE %s
+                 OR regexp_replace(description, '\\s+', '', 'g') ILIKE %s
+              )
             ORDER BY match_rank, available DESC, price, menu_id
             LIMIT %s
         """
@@ -54,6 +62,8 @@ class MenuCatalogRepository:
             pattern,
             pattern,
             pattern,
+            normalized_pattern,
+            normalized_pattern,
             args.limit,
         )
         with self._connect() as connection:

@@ -84,8 +84,14 @@ def _upsert_item(cursor: Any, args: Any) -> None:
     selection = args.selection
     allowed = menu[5] or {}
     order_forms = allowed.get("order_forms", {})
-    if selection.order_form == "set" and "set" not in order_forms:
-        raise ValueError("세트 변경이 불가능한 메뉴입니다.")
+    if order_forms and selection.order_form not in order_forms:
+        raise ValueError("선택한 단품/세트 구성을 지원하지 않는 메뉴입니다.")
+    if selection.size_up and not allowed.get("size_up"):
+        raise ValueError("사이즈업이 불가능한 메뉴입니다.")
+    if selection.extra_patty and not allowed.get("extra_patty"):
+        raise ValueError("패티 추가가 불가능한 메뉴입니다.")
+    if selection.extra_cheese and not allowed.get("extra_cheese"):
+        raise ValueError("치즈 추가가 불가능한 메뉴입니다.")
     if selection.drink_id and selection.order_form != "set":
         raise ValueError("음료 변경은 세트에서만 가능합니다.")
     if selection.drink_id and selection.drink_id not in allowed.get("allowed_drinks", []):

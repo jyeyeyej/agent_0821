@@ -127,7 +127,9 @@ def update_order_cart(
         raise BackendAPIError("지원하지 않는 장바구니 변경 작업입니다.")
 
     path = _session_path(session_id, "cart")
-    return _validate_result(request("UPDATE", path, json=dict(payload)))
+    request_payload = dict(payload)
+    request_payload["sessionId"] = _validate_session_id(session_id)
+    return _validate_result(request("PATCH", path, json=request_payload))
 
 
 def ready_for_payment(session_id: str) -> dict[str, Any]:

@@ -7,7 +7,18 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
-AudioMimeType = Literal["audio/webm", "audio/wav", "audio/mpeg"]
+AudioMimeType = Literal[
+    "audio/aac",
+    "audio/flac",
+    "audio/m4a",
+    "audio/mp4",
+    "audio/mpeg",
+    "audio/ogg",
+    "audio/wav",
+    "audio/webm",
+    "audio/x-m4a",
+    "audio/x-wav",
+]
 
 
 class KioskRagModel(BaseModel):

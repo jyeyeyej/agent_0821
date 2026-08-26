@@ -36,6 +36,9 @@ CONFIRMATION_KEY = "kiosk_requires_confirmation"
 PROCESSING_KEY = "kiosk_processing"
 STATUS_KEY = "kiosk_status"
 COMPLETE_CONFIRMATION_KEY = "kiosk_complete_confirmation"
+ERROR_KEY = "kiosk_error_message"
+TRACE_KEY = "kiosk_trace"
+RETRIEVALS_KEY = "kiosk_retrievals"
 
 
 def _initialize_state() -> None:
@@ -49,6 +52,9 @@ def _initialize_state() -> None:
         PROCESSING_KEY: False,
         STATUS_KEY: "active",
         COMPLETE_CONFIRMATION_KEY: False,
+        ERROR_KEY: None,
+        TRACE_KEY: [],
+        RETRIEVALS_KEY: [],
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -71,12 +77,19 @@ def _money(value: Any) -> str:
 
 def _apply_response(response: dict[str, Any], customer_text: str | None = None) -> None:
     cart = response.get("cart")
+    if not isinstance(cart, dict) and isinstance(response.get("items"), list) and response.get("status"):
+        # PATCH 장바구니 API는 wrapper 없이 최신 OrderCart 자체를 반환한다.
+        cart = response
     if isinstance(cart, dict):
         st.session_state[CART_KEY] = cart
         st.session_state[STATUS_KEY] = cart.get("status", st.session_state[STATUS_KEY])
     suggestions = response.get("suggestions")
     if isinstance(suggestions, list):
         st.session_state[SUGGESTIONS_KEY] = suggestions
+    if isinstance(response.get("trace"), list):
+        st.session_state[TRACE_KEY] = response["trace"]
+    if isinstance(response.get("retrievals"), list):
+        st.session_state[RETRIEVALS_KEY] = response["retrievals"]
     st.session_state[CONFIRMATION_KEY] = bool(response.get("requiresConfirmation", False))
 
     transcript = response.get("transcript") or customer_text
@@ -91,6 +104,9 @@ def _run_request(action: Callable[[], dict[str, Any]], customer_text: str | None
     if st.session_state[PROCESSING_KEY]:
         return
     st.session_state[PROCESSING_KEY] = True
+    st.session_state[ERROR_KEY] = None
+    st.session_state[TRACE_KEY] = []
+    st.session_state[RETRIEVALS_KEY] = []
     try:
         with st.spinner("주문 내용을 확인하고 있습니다..."):
             response = action()
@@ -98,11 +114,9 @@ def _run_request(action: Callable[[], dict[str, Any]], customer_text: str | None
             raise BackendAPIError("백엔드가 올바른 키오스크 응답을 반환하지 않았습니다.")
         _apply_response(response, customer_text)
     except BackendAPIError as error:
-        st.error(str(error))
-        st.info("기존 장바구니는 유지됩니다. 잠시 후 다시 시도해 주세요.")
+        st.session_state[ERROR_KEY] = f"{error} 기존 장바구니는 유지됩니다. 잠시 후 다시 시도해 주세요."
     except Exception:
-        st.error("주문 처리 중 문제가 발생했습니다.")
-        st.info("입력 내용을 확인한 뒤 다시 시도해 주세요.")
+        st.session_state[ERROR_KEY] = "주문 처리 중 문제가 발생했습니다. 입력 내용을 확인한 뒤 다시 시도해 주세요."
     finally:
         st.session_state[PROCESSING_KEY] = False
 
@@ -121,6 +135,8 @@ def _refresh_cart() -> None:
 
 
 def _render_messages() -> None:
+    if st.session_state.get(ERROR_KEY):
+        st.error(st.session_state[ERROR_KEY])
     for message in st.session_state[MESSAGES_KEY]:
         with st.chat_message(message.get("role", "assistant")):
             st.write(message.get("content", ""))
@@ -151,24 +167,30 @@ def _render_cart() -> None:
         if not isinstance(item, dict):
             continue
         name = item.get("name") or item.get("menuName") or "메뉴"
-        form = item.get("orderForm") or item.get("order_form")
+        selection = item.get("selection") if isinstance(item.get("selection"), dict) else {}
+        form = selection.get("orderForm") or selection.get("order_form")
         quantity = item.get("quantity", 1)
         st.markdown(f"**{name}** {f'({form})' if form else ''}")
         st.caption(f"수량 {quantity} · 항목 합계 {_money(item.get('lineTotal') or item.get('line_total'))}")
-        options = item.get("selectedOptions") or item.get("selected_options")
-        if options:
-            st.caption(f"옵션: {options}")
+        st.caption(
+            f"단가 {_money(item.get('unitPrice') or item.get('unit_price'))} · "
+            f"옵션 {_money(item.get('optionPrice') or item.get('option_price'))}"
+        )
+        if selection:
+            st.caption(f"옵션: {selection}")
         change, remove = st.columns(2)
         disabled = st.session_state[PROCESSING_KEY] or st.session_state[STATUS_KEY] == "ready_for_payment"
         if change.button("수량 +1", key=f"kiosk_quantity_{index}", disabled=disabled) and _client_ready():
             _run_request(lambda item=item: update_order_cart(st.session_state[SESSION_KEY], {
                 "operation": "update", "menuId": item.get("menuId") or item.get("menu_id"),
                 "quantity": int(item.get("quantity", 1)) + 1, "orderType": st.session_state[ORDER_TYPE_KEY],
+                "cartItemId": item.get("cartItemId") or item.get("cart_item_id"),
+                "selection": item.get("selection"),
             }))
             st.rerun()
         if remove.button("삭제", key=f"kiosk_remove_{index}", disabled=disabled) and _client_ready():
             _run_request(lambda item=item: update_order_cart(st.session_state[SESSION_KEY], {
-                "operation": "remove", "menuId": item.get("menuId") or item.get("menu_id"),
+                "operation": "remove", "cartItemId": item.get("cartItemId") or item.get("cart_item_id"),
                 "orderType": st.session_state[ORDER_TYPE_KEY],
             }))
             st.rerun()
@@ -189,6 +211,7 @@ def _start_new_order() -> None:
     st.session_state[CONFIRMATION_KEY] = False
     st.session_state[STATUS_KEY] = "active"
     st.session_state[COMPLETE_CONFIRMATION_KEY] = False
+    st.session_state[ERROR_KEY] = None
 
 
 _initialize_state()
@@ -257,4 +280,9 @@ if st.session_state[COMPLETE_CONFIRMATION_KEY]:
         st.rerun()
 
 with st.expander("개발자 정보", expanded=False):
-    st.json({"sessionId": st.session_state[SESSION_KEY], "cart": st.session_state[CART_KEY]})
+    st.json({
+        "sessionId": st.session_state[SESSION_KEY],
+        "cart": st.session_state[CART_KEY],
+        "retrievals": st.session_state[RETRIEVALS_KEY],
+        "trace": st.session_state[TRACE_KEY],
+    })

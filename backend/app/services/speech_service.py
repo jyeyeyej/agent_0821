@@ -10,7 +10,18 @@ from app.core.config import settings
 from app.providers.openai_media import openai_media_provider
 
 
-ALLOWED_KIOSK_AUDIO_MIME_TYPES = {"audio/webm", "audio/wav", "audio/mpeg"}
+ALLOWED_KIOSK_AUDIO_MIME_TYPES = {
+    "audio/aac",
+    "audio/flac",
+    "audio/m4a",
+    "audio/mp4",
+    "audio/mpeg",
+    "audio/ogg",
+    "audio/wav",
+    "audio/webm",
+    "audio/x-m4a",
+    "audio/x-wav",
+}
 DEFAULT_MAX_AUDIO_SIZE_BYTES = 10 * 1024 * 1024
 
 
@@ -62,7 +73,18 @@ def transcribe(audio: bytes, mime_type: str, transcript_override: str | None = N
 
     from openai import OpenAI
 
-    extension = {"audio/webm": "webm", "audio/wav": "wav", "audio/mpeg": "mp3"}[mime_type]
+    extension = {
+        "audio/aac": "aac",
+        "audio/flac": "flac",
+        "audio/m4a": "m4a",
+        "audio/mp4": "m4a",
+        "audio/mpeg": "mp3",
+        "audio/ogg": "ogg",
+        "audio/wav": "wav",
+        "audio/webm": "webm",
+        "audio/x-m4a": "m4a",
+        "audio/x-wav": "wav",
+    }[mime_type]
     client = OpenAI(api_key=settings.openai_api_key)
     response = client.audio.transcriptions.create(
         model=os.getenv("OPENAI_STT_MODEL", "gpt-4o-mini-transcribe"),

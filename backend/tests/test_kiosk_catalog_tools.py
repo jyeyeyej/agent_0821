@@ -95,6 +95,16 @@ def test_catalog_passes_allergen_filter_and_limit_to_sql() -> None:
     assert connection.cursor_instance.parameters[-1] == 2
 
 
+def test_catalog_matches_menu_names_without_spacing() -> None:
+    connection = FakeConnection([])
+    repository = MenuCatalogRepository(connection_factory=lambda: connection)
+
+    repository.search(SearchMenuCatalogArgs(query="새우버거"))
+
+    assert "regexp_replace(name" in connection.cursor_instance.query
+    assert "%새우버거%" in connection.cursor_instance.parameters
+
+
 @pytest.mark.parametrize(
     "payload",
     [
@@ -217,3 +227,15 @@ def test_transcribe_schema_rejects_wrong_mime_and_blank_audio() -> None:
         TranscribeAndRetrieveArgs(sessionId=session_id, audioBase64="", mimeType="audio/webm")
     with pytest.raises(ValidationError):
         TranscribeAndRetrieveArgs(sessionId=session_id, audioBase64="YQ==", mimeType="video/mp4")
+
+
+@pytest.mark.parametrize(
+    "mime_type",
+    ["audio/wav", "audio/x-wav", "audio/webm", "audio/mpeg", "audio/mp4", "audio/x-m4a"],
+)
+def test_transcribe_schema_accepts_frontend_audio_formats(mime_type) -> None:
+    payload = TranscribeAndRetrieveArgs(
+        sessionId=uuid4(), audioBase64=base64.b64encode(b"audio").decode("ascii"), mimeType=mime_type
+    )
+
+    assert payload.mime_type == mime_type
