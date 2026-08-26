@@ -4,6 +4,7 @@ httpx
 openai
 pydantic
 psycopg[binary]
+pgvector
 python-dotenv
 python-multipart
 pytest

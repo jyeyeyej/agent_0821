@@ -287,14 +287,14 @@ CartItem
 
 ```text
 PostgreSQL + pgvector
-  - kiosk_knowledge_documents: 지식 본문, metadata(JSONB), embedding(vector)
+  - documents: collection_name=kiosk_menu, 지식 본문, metadata(JSONB), embedding(vector)
   - menu_catalog: 현재 가격, 옵션, 알레르겐, 판매 상태
   - order_sessions: 주문 유형, 주문 상태, 생성·수정 시각
   - order_cart_items: 메뉴·선택 옵션·서버 계산 금액
   - conversation_turns: transcript, STT 신뢰도, 검색 문서 ID
 ```
 
-`backend/db/init.sql`은 `CREATE EXTENSION IF NOT EXISTS vector`와 테이블·인덱스를 만들고, `backend/db/seed.sql`은 테스트 메뉴와 RAG 문서를 적재한다. `docker-compose.yml`의 PostgreSQL 서비스만 기동한다. 향후 POS/재고 API를 붙일 때는 `search_menu_catalog`과 `update_order_cart` 내부의 카탈로그 Provider만 교체하며 API·Agent·프론트엔드 계약은 유지한다.
+`backend/db/init.sql`은 `CREATE EXTENSION IF NOT EXISTS vector`와 예제 호환 `documents` 테이블·인덱스를 만들고, `backend/db/seed.sql`은 테스트 메뉴와 RAG 문서를 적재한다. 임베딩은 Ollama `embeddinggemma`, 연결은 `psycopg` + `register_vector`, 검색은 pgvector `<=>` 코사인 거리 연산자를 사용한다. `docker-compose.yml`의 PostgreSQL·Ollama 서비스만 기동한다. 향후 POS/재고 API를 붙일 때는 `search_menu_catalog`과 `update_order_cart` 내부의 카탈로그 Provider만 교체하며 API·Agent·프론트엔드 계약은 유지한다.
 
 ## 9. 구현 순서와 완료 기준
 

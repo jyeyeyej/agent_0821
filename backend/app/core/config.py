@@ -26,6 +26,7 @@ class Settings:
     gemini_model: str = os.getenv("GEMINI_MODEL", "")
     ollama_base_url: str = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
     ollama_model: str = os.getenv("OLLAMA_MODEL", "llama3.2")
+    ollama_embedding_model: str = os.getenv("OLLAMA_EMBEDDING_MODEL", "embeddinggemma")
     request_timeout_seconds: float = float(os.getenv("REQUEST_TIMEOUT_SECONDS", "60"))
     weather_mode: str = os.getenv("WEATHER_MODE", "mock")
     open_meteo_base_url: str = os.getenv("OPEN_METEO_BASE_URL", "https://api.open-meteo.com").rstrip("/")
